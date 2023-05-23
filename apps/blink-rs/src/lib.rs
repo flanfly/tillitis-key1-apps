@@ -59,7 +59,7 @@ const TK1_MMIO_TK1_LED_B_BIT: u32    = 0;
 pub extern "C" fn main() -> ! {
     let sleep_time = 100000;
     loop {
-        tx(b"Hello, world!\n");
+        tx(b"Hello, world!\n\r");
         //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_R_BIT);
         //sleep(sleep_time);
         //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_G_BIT);
