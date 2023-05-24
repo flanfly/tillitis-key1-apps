@@ -2,9 +2,16 @@
 #![no_main]
 #![feature(start)]
 
+extern crate k256;
+
 use core::{
     panic::PanicInfo,
     arch::asm,
+};
+
+use k256::{
+    SecretKey,
+    elliptic_curve::sec1::ToEncodedPoint,
 };
 
 const TK1_MMIO_BASE: u32      = 0xc0000000;
@@ -53,23 +60,60 @@ fn sleep(cycles: usize) {
 const TK1_MMIO_TK1_LED_R_BIT: u32    = 2;
 const TK1_MMIO_TK1_LED_G_BIT: u32    = 1;
 const TK1_MMIO_TK1_LED_B_BIT: u32    = 0;
+
+struct MyRng();
+
+impl rand_core::RngCore for MyRng {
+    fn next_u32(&mut self) -> u32 {
+        0xdeadbeef
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        0xdeadbeefdeadbeef
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        for i in 0..dest.len() {
+            dest[i] = 0x01;
+        }
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+        for i in 0..dest.len() {
+            dest[i] = 0x01;
+        }
+        Ok(())
+    }
+}
+
+impl rand_core::CryptoRng for MyRng {}
    
 #[no_mangle]
 #[start]
 pub extern "C" fn main() -> ! {
-    let sleep_time = 100000;
+    tx(b"Tillitis Wallet App\n\r");
+    
+    let mut rng = MyRng();
+    tx(b"Deriving secret key\n\r");
+    let sec = SecretKey::random(&mut rng);
+
+    tx(b"Computing public key\n\r");
+    let key = sec.public_key();
     loop {
-        tx(b"Hello, world!\n\r");
-        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_R_BIT);
-        //sleep(sleep_time);
-        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_G_BIT);
-        //sleep(sleep_time);
-        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_B_BIT);
-        //sleep(sleep_time);
+        tx(b"Public key\n\r");
+        tx(key.to_encoded_point(false).as_bytes());
+        tx(b"\n\r");
     }
 }
 
 #[panic_handler]
-pub fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+fn panic(_info: &PanicInfo) -> ! {
+    let sleep_time = 100000;
+
+    loop {
+        poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_R_BIT);
+        sleep(sleep_time);
+        poke(Mmio::Led, 0);
+        sleep(sleep_time);
+    }
 }

@@ -13,6 +13,7 @@ name = "blink-rs"
 version = "0.1.0"
 dependencies = [
  "k256",
+ "rand_core",
 ]
 
 [[package]]
