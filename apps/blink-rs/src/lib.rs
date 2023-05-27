@@ -14,9 +14,9 @@ use k256::{
     elliptic_curve::sec1::ToEncodedPoint,
 };
 
-const TK1_MMIO_BASE: u32      = 0xc0000000;
-const TK1_MMIO_TK1_BASE: u32         = TK1_MMIO_BASE | 0x3f000000;
-const TK1_MMIO_UART_BASE: u32        = TK1_MMIO_BASE | 0x03000000;
+const TK1_MMIO_BASE: u32 = 0xc0000000;
+const TK1_MMIO_TK1_BASE: u32 = TK1_MMIO_BASE | 0x3f000000;
+const TK1_MMIO_UART_BASE: u32 = TK1_MMIO_BASE | 0x03000000;
 
 #[repr(u32)]
 enum Mmio {
@@ -25,7 +25,7 @@ enum Mmio {
     UartStopBits = TK1_MMIO_UART_BASE | 0x48,
     UartRxStatus = TK1_MMIO_UART_BASE | 0x80,
     UartRxData = TK1_MMIO_UART_BASE | 0x84,
-    UartRxBytes  = TK1_MMIO_UART_BASE | 0x88,
+    UartRxBytes = TK1_MMIO_UART_BASE | 0x88,
     UartTxStatus = TK1_MMIO_UART_BASE | 0x100,
     UartTxData = TK1_MMIO_UART_BASE | 0x104,
 
@@ -33,9 +33,7 @@ enum Mmio {
 }
 
 fn peek(addr: Mmio) -> u32 {
-    unsafe {
-        core::ptr::read_volatile(addr as u32 as *const u32)
-    }
+    unsafe { core::ptr::read_volatile(addr as u32 as *const u32) }
 }
 
 fn poke(addr: Mmio, data: u32) {
@@ -53,13 +51,15 @@ fn tx(data: &[u8]) {
 
 fn sleep(cycles: usize) {
     for _ in 0..cycles {
-        unsafe { asm!("nop"); }
+        unsafe {
+            asm!("nop");
+        }
     }
 }
 
-const TK1_MMIO_TK1_LED_R_BIT: u32    = 2;
-const TK1_MMIO_TK1_LED_G_BIT: u32    = 1;
-const TK1_MMIO_TK1_LED_B_BIT: u32    = 0;
+const TK1_MMIO_TK1_LED_R_BIT: u32 = 2;
+const TK1_MMIO_TK1_LED_G_BIT: u32 = 1;
+const TK1_MMIO_TK1_LED_B_BIT: u32 = 0;
 
 struct MyRng();
 
