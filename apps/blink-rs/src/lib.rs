@@ -11,10 +11,14 @@ use core::{
 };
 
 use k256::{
-    SecretKey,
-    elliptic_curve::sec1::ToEncodedPoint,
+    ecdsa::{self, SigningKey},
+    Secp256k1, SecretKey,
+
 };
 use bumpalo::{boxed::Box, Bump};
+
+use k256::ecdsa::signature::Signer;
+use k256::ecdsa::Signature;
 
 const TK1_MMIO_BASE: u32 = 0xc0000000;
 const TK1_MMIO_TK1_BASE: u32 = TK1_MMIO_BASE | 0x3f000000;
@@ -152,27 +156,37 @@ fn gen_key() -> [u8; 32] {
     key
 }
 
+const SIGN_ME: &[u8] = b"SPINE";
+
 #[no_mangle]
 #[start]
 pub extern "C" fn _start() -> ! {
     tx(b"Secret....\n\r");
     let key = gen_key();
-    let bump = Bump::new();
+    //let bump = Bump::new();
 
-    match SecretKey::from_slice(&key) {
+    let key = match SecretKey::from_slice(&key) {
         Ok(key) => {
-            let key = key.public_key().to_sec1_bytes();
-            for k in key.into_iter() {
-                print_byte(*k);
-            }
-            tx(b"\n\r");
+            //   let pub_key = key.public_key().to_sec1_bytes();
+            //   for k in pub_key.into_iter() {
+            //       print_byte(*k);
+            //   }
+            //   tx(b"\n\r");
+            key
         }
         Err(e) => {
-            tx(b"Error\n");
+            // tx(b"Error\n");
+            panic!()
         }
+    };
+    let sign_key = SigningKey::from(key);
+    let sig: Signature = sign_key.sign(SIGN_ME);
+
+    for s in sig.to_bytes() {
+        print_byte(s);
     }
 
-    tx(b"Hello, world!\n\r");
+    //  tx(b"Hello, world!\n\r");
     loop {
         //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_R_BIT);
         //sleep(sleep_time);
