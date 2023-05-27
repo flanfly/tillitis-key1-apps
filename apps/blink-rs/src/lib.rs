@@ -18,6 +18,8 @@ const TK1_MMIO_BASE: u32 = 0xc0000000;
 const TK1_MMIO_TK1_BASE: u32 = TK1_MMIO_BASE | 0x3f000000;
 const TK1_MMIO_UART_BASE: u32 = TK1_MMIO_BASE | 0x03000000;
 
+core::arch::global_asm!(include_str!("../../../../tkey-libs/libcrt0/crt0.S"));
+
 #[repr(u32)]
 enum Mmio {
     UartBitRate = TK1_MMIO_UART_BASE | 0x40,
@@ -87,7 +89,12 @@ impl rand_core::RngCore for MyRng {
 }
 
 impl rand_core::CryptoRng for MyRng {}
-   
+
+fn print_nibble(byte: u8) {
+    let b = if byte < 10 { byte + 0x30 } else { byte + 0x37 };
+    tx(&[b]);
+}
+  
 #[no_mangle]
 #[start]
 pub extern "C" fn _start() -> ! {
@@ -97,14 +104,45 @@ pub extern "C" fn _start() -> ! {
     
     let mut rng = MyRng();
     tx(b"Deriving secret key\n\r");
-    let sec = SecretKey::random(&mut rng);
+    //let sec = SecretKey::random(&mut rng);
 
-    tx(b"Computing public key\n\r");
-    let key = sec.public_key();
+    let junk = [1; 32];
+    tx(b"Secret....\n\r");
+
+    match SecretKey::from_slice(&junk) {
+        //.unwrap(); // .to_bytes();
+        Ok(key) => {
+            for k in key.to_bytes() {
+                let nibble0 = k & 0xf;
+                let nibble1 = k >> 4;
+                // TODO: implement print! macro for rich formatting
+                print_nibble(nibble0);
+                print_nibble(nibble1);
+            }
+        }
+        Err(e) => {
+            tx(b"Error\n");
+        }
+    }
+
+    let key = [0xaa, 0xbb, 0x12, 0x34];
+
+    for k in key {
+        let nibble0 = k & 0xf;
+        let nibble1 = k >> 4;
+        // TODO: implement print! macro for rich formatting
+        print_nibble(nibble0);
+        print_nibble(nibble1);
+    }
+
+    tx(b"Hello, world!\n\r");
     loop {
-        tx(b"Public key\n\r");
-        tx(key.to_encoded_point(false).as_bytes());
-        tx(b"\n\r");
+        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_R_BIT);
+        //sleep(sleep_time);
+        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_G_BIT);
+        //sleep(sleep_time);
+        //poke(Mmio::Led, 1 << TK1_MMIO_TK1_LED_B_BIT);
+        //sleep(sleep_time);
     }
 }
 
