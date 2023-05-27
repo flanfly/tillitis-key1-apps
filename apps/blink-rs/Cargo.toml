@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 rand_core = "0.6.4"
-bumpalo = "3.13.0"
+bumpalo = { version = "3.13.0", features = ["allocator_api", "boxed"] }
 
 [dependencies.k256]
 version = "0.13.1"
 default-features = false
-features = ["ecdsa"]
+features = ["ecdsa", "alloc"]
 
 [lib]
 name       = "app"

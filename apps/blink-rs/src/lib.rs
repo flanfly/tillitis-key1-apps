@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(start)]
+#![feature(global_allocator, allocator_api)]
 
 extern crate k256;
 
@@ -13,12 +14,29 @@ use k256::{
     SecretKey,
     elliptic_curve::sec1::ToEncodedPoint,
 };
+use bumpalo::{boxed::Box, Bump};
 
 const TK1_MMIO_BASE: u32 = 0xc0000000;
 const TK1_MMIO_TK1_BASE: u32 = TK1_MMIO_BASE | 0x3f000000;
 const TK1_MMIO_UART_BASE: u32 = TK1_MMIO_BASE | 0x03000000;
 
 core::arch::global_asm!(include_str!("../../../../tkey-libs/libcrt0/crt0.S"));
+use bumpalo::AllocOrInitError::Alloc;
+
+use core::alloc::GlobalAlloc;
+
+struct Yolo {}
+
+unsafe impl GlobalAlloc for Yolo {
+    unsafe fn alloc(&self, l: core::alloc::Layout) -> *mut u8 {
+        let y = 0x4000_1000 as *mut u8;
+        y
+    }
+    unsafe fn dealloc(&self, p: *mut u8, l: core::alloc::Layout) {}
+}
+
+#[global_allocator]
+static GLOBAL: Yolo = Yolo {};
 
 #[repr(u32)]
 enum Mmio {
@@ -139,11 +157,13 @@ fn gen_key() -> [u8; 32] {
 pub extern "C" fn _start() -> ! {
     tx(b"Secret....\n\r");
     let key = gen_key();
+    let bump = Bump::new();
 
     match SecretKey::from_slice(&key) {
         Ok(key) => {
-            for k in key.to_bytes() {
-                print_byte(k);
+            let key = key.public_key().to_sec1_bytes();
+            for k in key.into_iter() {
+                print_byte(*k);
             }
             tx(b"\n\r");
         }
