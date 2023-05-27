@@ -1,0 +1,8 @@
+[build]
+target = "riscv32i-unknown-none-elf"
+
+[target.riscv32i-unknown-none-elf]
+rustflags = [
+  "-C",
+  "link-arg=-T../../../tkey-libs/app.lds",
+]
