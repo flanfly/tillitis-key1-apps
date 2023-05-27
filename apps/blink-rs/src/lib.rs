@@ -94,7 +94,17 @@ fn print_nibble(byte: u8) {
     let b = if byte < 10 { byte + 0x30 } else { byte + 0x37 };
     tx(&[b]);
 }
-  
+
+// TODO: implement print! macro for rich formatting
+fn print_byte(byte: u8) {
+    let nibble0 = byte >> 4;
+    let nibble1 = byte & 0xf;
+    print_nibble(nibble0);
+    print_nibble(nibble1);
+}
+
+const SLEEP_TIME: u32 = 100000;
+
 #[no_mangle]
 #[start]
 pub extern "C" fn _start() -> ! {
@@ -110,14 +120,9 @@ pub extern "C" fn _start() -> ! {
     tx(b"Secret....\n\r");
 
     match SecretKey::from_slice(&junk) {
-        //.unwrap(); // .to_bytes();
         Ok(key) => {
             for k in key.to_bytes() {
-                let nibble0 = k & 0xf;
-                let nibble1 = k >> 4;
-                // TODO: implement print! macro for rich formatting
-                print_nibble(nibble0);
-                print_nibble(nibble1);
+                print_byte(k);
             }
         }
         Err(e) => {
@@ -128,11 +133,7 @@ pub extern "C" fn _start() -> ! {
     let key = [0xaa, 0xbb, 0x12, 0x34];
 
     for k in key {
-        let nibble0 = k & 0xf;
-        let nibble1 = k >> 4;
-        // TODO: implement print! macro for rich formatting
-        print_nibble(nibble0);
-        print_nibble(nibble1);
+        print_byte(k);
     }
 
     tx(b"Hello, world!\n\r");
