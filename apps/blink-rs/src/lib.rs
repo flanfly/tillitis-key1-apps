@@ -59,6 +59,14 @@ fn sleep(cycles: usize) {
     }
 }
 
+fn read32(addr: u32) -> u32 {
+    unsafe { core::ptr::read_volatile(addr as u32 as *const u32) }
+}
+
+fn write32(addr: u32, v: u32) {
+    unsafe { core::ptr::write_volatile(addr as u32 as *mut u32, v) };
+}
+
 const TK1_MMIO_TK1_LED_R_BIT: u32 = 2;
 const TK1_MMIO_TK1_LED_G_BIT: u32 = 1;
 const TK1_MMIO_TK1_LED_B_BIT: u32 = 0;
@@ -105,35 +113,43 @@ fn print_byte(byte: u8) {
 
 const SLEEP_TIME: u32 = 100000;
 
+const TK1_MMIO_UDS_BASE: u32 = TK1_MMIO_BASE + 0x0200_0000;
+
+const TK1_MMIO_TRNG_BASE: u32 = TK1_MMIO_BASE + 0x0000_0000;
+const TK1_MMIO_TRNG_STATUS: u32 = TK1_MMIO_TRNG_BASE + 0x0024;
+const TK1_MMIO_TRNG_ENTROPY: u32 = TK1_MMIO_TRNG_BASE + 0x0080;
+
+fn gen_key() -> [u8; 32] {
+    let mut key: [u8; 32] = [1; 32];
+
+    for o in (0..32).step_by(4) {
+        while read32(TK1_MMIO_TRNG_STATUS) & 0x1 == 0 {}
+        let rand = read32(TK1_MMIO_TRNG_ENTROPY);
+        let o = o as usize;
+        key[0 + o] = (rand >> 24) as u8;
+        key[1 + o] = (rand >> 16) as u8;
+        key[2 + o] = (rand >> 8) as u8;
+        key[3 + o] = rand as u8;
+    }
+    key
+}
+
 #[no_mangle]
 #[start]
 pub extern "C" fn _start() -> ! {
-    unsafe { asm!("li sp, 0x4001fff0"); }
-
-    tx(b"Tillitis Wallet App\n\r");
-    
-    let mut rng = MyRng();
-    tx(b"Deriving secret key\n\r");
-    //let sec = SecretKey::random(&mut rng);
-
-    let junk = [1; 32];
     tx(b"Secret....\n\r");
+    let key = gen_key();
 
-    match SecretKey::from_slice(&junk) {
+    match SecretKey::from_slice(&key) {
         Ok(key) => {
             for k in key.to_bytes() {
                 print_byte(k);
             }
+            tx(b"\n\r");
         }
         Err(e) => {
             tx(b"Error\n");
         }
-    }
-
-    let key = [0xaa, 0xbb, 0x12, 0x34];
-
-    for k in key {
-        print_byte(k);
     }
 
     tx(b"Hello, world!\n\r");
