@@ -66,6 +66,7 @@ CMD [ "qemu-system-riscv32" \
     , "-M", "tk1,fifo=chrid" \
     , "-bios", "/tkey-firmware-noconsole.elf" \
     , "-d", "trace:riscv_trap,guest_errors" \
+    , "-s" \
 ]
 
 LABEL org.opencontainers.image.description="Tillitis TKey QEMU machine with firmware ${TKEYREPO_TAG}"

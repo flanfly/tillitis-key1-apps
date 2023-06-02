@@ -47,7 +47,7 @@ while true; do
   printf "Stop QEMU by typing 'Ctrl-a' and then 'x'. It will then restart.\n"
   printf "\033[0m"
 
-  podman run --rm -it --device "$containerside:/pty-on-host" $image
+  podman run --rm -it -p 1234:1234 --device "$containerside:/pty-on-host" $image
 
   printf "\033[33m"
   printf "Restarting in 1s... Type 'Ctrl-c' now to quit!\n"

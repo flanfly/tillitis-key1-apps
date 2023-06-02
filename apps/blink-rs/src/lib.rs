@@ -90,7 +90,9 @@ impl rand_core::CryptoRng for MyRng {}
    
 #[no_mangle]
 #[start]
-pub extern "C" fn main() -> ! {
+pub extern "C" fn _start() -> ! {
+    unsafe { asm!("li sp, 0x4001fff0"); }
+
     tx(b"Tillitis Wallet App\n\r");
     
     let mut rng = MyRng();
